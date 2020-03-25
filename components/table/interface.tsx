@@ -88,7 +88,7 @@ export interface ColumnType<RecordType> extends RcColumnType<RecordType> {
   onFilterDropdownVisibleChange?: (visible: boolean) => void;
 }
 
-export interface ColumnGroupType<RecordType> extends ColumnType<RecordType> {
+export interface ColumnGroupType<RecordType> extends Omit<ColumnType<RecordType>, 'dataIndex'> {
   children: ColumnsType<RecordType>;
 }
 
@@ -114,7 +114,7 @@ export interface TableRowSelection<T> {
   type?: RowSelectionType;
   selectedRowKeys?: Key[];
   onChange?: (selectedRowKeys: Key[], selectedRows: T[]) => void;
-  getCheckboxProps?: (record: T) => Partial<CheckboxProps>;
+  getCheckboxProps?: (record: T) => Partial<Omit<CheckboxProps, 'checked' | 'defaultChecked'>>;
   onSelect?: SelectionSelectFn<T>;
   onSelectMultiple?: (selected: boolean, selectedRows: T[], changeRows: T[]) => void;
   /** @deprecated This function is meaningless and should use `onChange` instead */

@@ -12,7 +12,7 @@ import warning from '../_util/warning';
 import FormItemLabel, { FormItemLabelProps } from './FormItemLabel';
 import FormItemInput, { FormItemInputProps } from './FormItemInput';
 import { FormContext, FormItemContext } from './context';
-import { toArray, getFieldId } from './util';
+import { toArray, getFieldId, useFrameState } from './util';
 
 const ValidateStatuses = tuple('success', 'warning', 'error', 'validating', '');
 export type ValidateStatus = typeof ValidateStatuses[number];
@@ -86,16 +86,11 @@ function FormItem(props: FormItemProps): React.ReactElement {
   const formContext = React.useContext(FormContext);
   const { updateItemErrors } = React.useContext(FormItemContext);
   const [domErrorVisible, innerSetDomErrorVisible] = React.useState(!!help);
-  const [inlineErrors, innerSetInlineErrors] = React.useState<Record<string, string[]>>({});
+  const [inlineErrors, setInlineErrors] = useFrameState<Record<string, string[]>>({});
 
   function setDomErrorVisible(visible: boolean) {
     if (!destroyRef.current) {
       innerSetDomErrorVisible(visible);
-    }
-  }
-  function setInlineErrors(errors: Record<string, string[]>) {
-    if (!destroyRef.current) {
-      innerSetInlineErrors(errors);
     }
   }
 
@@ -121,12 +116,10 @@ function FormItem(props: FormItemProps): React.ReactElement {
     ? updateItemErrors
     : (subName: string, subErrors: string[]) => {
         if (!isEqual(inlineErrors[subName], subErrors)) {
-          Promise.resolve().then(() => {
-            setInlineErrors({
-              ...inlineErrors,
-              [subName]: subErrors,
-            });
-          });
+          setInlineErrors(prevInlineErrors => ({
+            ...prevInlineErrors,
+            [subName]: subErrors,
+          }));
         }
       };
 
@@ -303,6 +296,12 @@ function FormItem(props: FormItemProps): React.ReactElement {
             'Must set `name` or use render props when `dependencies` is set.',
           );
         } else if (React.isValidElement(children)) {
+          warning(
+            (children.props as any).defaultValue === undefined,
+            'Form.Item',
+            '`defaultValue` will not work on controlled Field. You should use `initialValues` of Form instead.',
+          );
+
           const childProps = { ...children.props, ...mergedControl };
 
           // We should keep user origin event handler
